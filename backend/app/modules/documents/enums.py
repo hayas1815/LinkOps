@@ -11,10 +11,17 @@ class DocumentStatus(StrEnum):
     """
 
     UPLOADED = "UPLOADED"
+    QUEUED = "QUEUED"
+    PROCESSING = "PROCESSING"
+    TEXT_EXTRACTED = "TEXT_EXTRACTED"
+    CHUNKING = "CHUNKING"
+    EMBEDDING = "EMBEDDING"
+    PROCESSED = "PROCESSED"
     VALIDATING = "VALIDATING"
     STORED = "STORED"
     READY = "READY"
     FAILED = "FAILED"
+
 
 
 class DocumentType(StrEnum):

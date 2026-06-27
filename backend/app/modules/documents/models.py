@@ -4,8 +4,8 @@ Database models for the Document module.
 
 import uuid
 from datetime import datetime
-from sqlalchemy import BigInteger, DateTime, Enum, String, Uuid, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import BigInteger, DateTime, Enum, String, Text, Uuid, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
 from app.modules.documents.enums import DocumentStatus, DocumentType
@@ -48,6 +48,34 @@ class Document(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    processing_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    processing_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    failure_reason: Mapped[str | None] = mapped_column(String, nullable=True)
+    
+    # Text Extraction columns (S4-M3)
+    extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    page_count: Mapped[int | None] = mapped_column(nullable=True)
+    extraction_method: Mapped[str | None] = mapped_column(String, nullable=True)
+    extraction_language: Mapped[str | None] = mapped_column(String, nullable=True)
+    extraction_confidence: Mapped[float | None] = mapped_column(nullable=True)
+    extracted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
+
+    # Relationship to chunks (back-ref side of DocumentChunk.document)
+    chunks = relationship(
+        "DocumentChunk",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        lazy="raise",
+    )
+
+

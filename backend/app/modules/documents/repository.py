@@ -106,3 +106,85 @@ class DocumentRepository:
         self.session.add(document)
         await self.session.flush()
         return True
+
+    async def get_by_checksum(self, checksum: str) -> Document | None:
+        """
+        Retrieve an active (not soft-deleted) Document entity by its checksum.
+
+        Args:
+            checksum: The SHA-256 checksum of the file.
+
+        Returns:
+            The Document model instance if found and not deleted, else None.
+        """
+        stmt = select(Document).where(
+            Document.checksum == checksum, Document.deleted_at.is_(None)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def update_status(
+        self,
+        document_id: uuid.UUID,
+        status: "DocumentStatus",
+        *,
+        failure_reason: str | None = None,
+        processing_started_at: "datetime | None" = None,
+        processing_completed_at: "datetime | None" = None,
+        extracted_text: str | None = None,
+        page_count: int | None = None,
+        extraction_method: str | None = None,
+        extraction_language: str | None = None,
+        extraction_confidence: float | None = None,
+        extracted_at: "datetime | None" = None,
+    ) -> Document | None:
+        """
+        Update only the status (and optional processing timestamps) of a Document.
+
+        Args:
+            document_id: The UUID of the document to update.
+            status: The new DocumentStatus value.
+            failure_reason: Optional failure description.
+            processing_started_at: Optional timestamp for when processing began.
+            processing_completed_at: Optional timestamp for when processing completed.
+            extracted_text: Optional extracted text.
+            page_count: Optional page count.
+            extraction_method: Optional method used for extraction.
+            extraction_language: Optional detected language.
+            extraction_confidence: Optional extraction confidence score.
+            extracted_at: Optional timestamp when extraction finished.
+
+        Returns:
+            The updated Document model instance, or None if not found.
+        """
+        from app.modules.documents.enums import DocumentStatus  # noqa: PLC0415
+
+        document = await self.get_by_id(document_id)
+        if document is None:
+            return None
+
+        document.status = status
+        if failure_reason is not None:
+            document.failure_reason = failure_reason
+        if processing_started_at is not None:
+            document.processing_started_at = processing_started_at
+        if processing_completed_at is not None:
+            document.processing_completed_at = processing_completed_at
+
+        # Text extraction fields
+        if extracted_text is not None:
+            document.extracted_text = extracted_text
+        if page_count is not None:
+            document.page_count = page_count
+        if extraction_method is not None:
+            document.extraction_method = extraction_method
+        if extraction_language is not None:
+            document.extraction_language = extraction_language
+        if extraction_confidence is not None:
+            document.extraction_confidence = extraction_confidence
+        if extracted_at is not None:
+            document.extracted_at = extracted_at
+
+        self.session.add(document)
+        await self.session.flush()
+        return document

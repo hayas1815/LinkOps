@@ -10,6 +10,10 @@ from app.modules.documents.repository import DocumentRepository
 from app.modules.documents.router import router
 from app.modules.documents.service import DocumentService
 
+# Import DocumentChunk so SQLAlchemy can resolve the Document.chunks
+# relationship string reference ('DocumentChunk') at mapper configuration time.
+import app.modules.document_chunks.models  # noqa: F401, E402
+
 __all__ = [
     "DocumentStatus",
     "DocumentType",

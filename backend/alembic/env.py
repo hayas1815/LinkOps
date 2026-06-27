@@ -41,6 +41,8 @@ from app.database.base import Base  # noqa: E402
 # Import every model module so SQLAlchemy registers their Table objects in
 # Base.metadata before autogenerate runs.
 import app.modules.documents.models  # noqa: F401, E402
+import app.modules.document_chunks.models  # noqa: F401, E402
+import app.modules.conversations.models  # noqa: F401, E402
 # ---------------------------------------------------------------------------
 
 settings = get_settings()

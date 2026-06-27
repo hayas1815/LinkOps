@@ -183,3 +183,66 @@ def test_delete_document_success(test_client: TestClient) -> None:
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
     app.dependency_overrides.clear()
+
+
+def test_upload_document_success(test_client: TestClient) -> None:
+    """
+    Test POST /api/v1/documents/upload ingests and returns document.
+    """
+    mock_service = MagicMock(spec=DocumentService)
+    mock_doc = Document(
+        id=uuid.uuid4(),
+        filename="test.pdf",
+        original_filename="test.pdf",
+        document_type=DocumentType.MANUAL,
+        status=DocumentStatus.STORED,
+        version=1,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    mock_service.ingest_document = AsyncMock(return_value=mock_doc)
+
+    app.dependency_overrides[get_document_service] = lambda: mock_service
+
+    # Prepare multipart request data
+    files = {"file": ("test.pdf", b"pdf file content", "application/pdf")}
+    data = {"document_type": "MANUAL"}
+
+    response = test_client.post(
+        "/api/v1/documents/upload",
+        files=files,
+        data=data,
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    result = response.json()
+    assert result["filename"] == "test.pdf"
+    assert result["status"] == "STORED"
+
+    app.dependency_overrides.clear()
+
+
+def test_upload_document_validation_error(test_client: TestClient) -> None:
+    """
+    Test POST /api/v1/documents/upload returns HTTP 400 Bad Request on validation failure.
+    """
+    mock_service = MagicMock(spec=DocumentService)
+    from app.modules.documents.exceptions import DocumentValidationException
+    mock_service.ingest_document = AsyncMock(
+        side_effect=DocumentValidationException("Empty files are not allowed.")
+    )
+
+    app.dependency_overrides[get_document_service] = lambda: mock_service
+
+    files = {"file": ("empty.pdf", b"", "application/pdf")}
+    data = {"document_type": "MANUAL"}
+
+    response = test_client.post(
+        "/api/v1/documents/upload",
+        files=files,
+        data=data,
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "empty files" in response.json()["detail"].lower()
+
+    app.dependency_overrides.clear()
+

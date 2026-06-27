@@ -18,7 +18,7 @@ services:
   # PostgreSQL 16 — Relational database for core platform data
   # ---------------------------------------------------------------------------
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: linkops-postgres
     restart: unless-stopped
     ports:

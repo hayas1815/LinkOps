@@ -75,12 +75,40 @@ class DocumentResponse(DocumentBase):
         default=None, description="The checksum of the document file"
     )
     version: int = Field(..., description="The version of the document record")
+    processing_started_at: datetime | None = Field(
+        default=None, description="The timestamp when document processing started"
+    )
+    processing_completed_at: datetime | None = Field(
+        default=None, description="The timestamp when document processing completed"
+    )
+    failure_reason: str | None = Field(
+        default=None, description="The reason for processing failure, if applicable"
+    )
+    extracted_text: str | None = Field(
+        default=None, description="The extracted text content of the document"
+    )
+    page_count: int | None = Field(
+        default=None, description="The number of pages in the document"
+    )
+    extraction_method: str | None = Field(
+        default=None, description="The method/tool used to extract text"
+    )
+    extraction_language: str | None = Field(
+        default=None, description="The detected language of the extracted text"
+    )
+    extraction_confidence: float | None = Field(
+        default=None, description="The confidence score of the text extraction"
+    )
+    extracted_at: datetime | None = Field(
+        default=None, description="The timestamp when the text was extracted"
+    )
     created_at: datetime = Field(
         ..., description="The timestamp when the document record was created"
     )
     updated_at: datetime = Field(
         ..., description="The timestamp when the document record was last updated"
     )
+
 
 
 class DocumentListResponse(BaseModel):

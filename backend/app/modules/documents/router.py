@@ -5,10 +5,15 @@ API Router for the Document module.
 import uuid
 from typing import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.documents.exceptions import DocumentNotFoundException
+from app.database import get_db
+from app.modules.documents.enums import DocumentType
+from app.modules.documents.exceptions import (
+    DocumentNotFoundException,
+    DocumentValidationException,
+)
 from app.modules.documents.repository import DocumentRepository
 from app.modules.documents.schemas import (
     DocumentCreate,
@@ -18,19 +23,21 @@ from app.modules.documents.schemas import (
 )
 from app.modules.documents.service import DocumentService
 
+
 router = APIRouter(prefix="/api/v1/documents", tags=["Documents"])
 
 
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_async_session(
+    session: AsyncSession = Depends(get_db),
+) -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency to yield an asynchronous database session.
 
     Yields:
         AsyncSession: The database session.
     """
-    # Placeholder for async session initialization.
-    # Will be bound to async engine/sessionmaker in Sprint 3.
-    yield None  # type: ignore
+    yield session
+
 
 
 async def get_document_service(
@@ -50,8 +57,48 @@ async def get_document_service(
 
 
 @router.post(
+    "/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED
+)
+async def upload_document(
+    file: UploadFile = File(..., description="The document file to upload"),
+    document_type: DocumentType = Form(
+        default=DocumentType.UNKNOWN,
+        description="The type/classification of the document",
+    ),
+    service: DocumentService = Depends(get_document_service),
+) -> DocumentResponse:
+    """
+    Upload an industrial document file.
+
+    Validates file size, extension, and MIME type. Automatically computes
+    SHA-256 integrity checksum, stores file in MinIO object store, and
+    saves metadata in PostgreSQL. Handles duplicate detection gracefully.
+    """
+    try:
+        contents = await file.read()
+        document = await service.ingest_document(
+            filename=file.filename or "unknown",
+            content=contents,
+            content_type=file.content_type,
+            document_type=document_type,
+        )
+        return DocumentResponse.model_validate(document)
+    except DocumentValidationException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Upload failed: {str(e)}",
+        ) from e
+
+
+@router.post(
     "/", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED
 )
+
 async def create_document(
     document_in: DocumentCreate,
     service: DocumentService = Depends(get_document_service),

@@ -58,3 +58,14 @@ app.include_router(health_router)
 # bootstrap endpoints until feature modules are introduced.
 app.include_router(root_router, prefix=settings.api_v1_prefix)
 app.include_router(health_router, prefix=settings.api_v1_prefix)
+
+# Feature Module Routers
+from app.modules.documents.router import router as documents_router
+from app.modules.search.router import router as search_router
+from app.modules.copilot.router import router as copilot_router
+from app.modules.conversations.router import router as conversations_router
+
+app.include_router(documents_router)
+app.include_router(search_router)
+app.include_router(copilot_router)
+app.include_router(conversations_router)

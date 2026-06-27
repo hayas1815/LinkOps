@@ -8,8 +8,15 @@ alembic==1.18.5
 asyncpg==0.30.0
 psycopg[binary]==3.3.4
 neo4j==6.2.0
-pgvector==0.4.2
+pgvector==0.3.6
 redis==8.0.1
 celery==5.6.3
 httpx==0.28.1
 minio==7.2.15
+python-multipart==0.0.12
+
+# S4-M4: Embedding generation
+sentence-transformers==3.4.1
+torch>=2.0.0
+scikit-learn>=1.4.0
+scipy>=1.12.0
