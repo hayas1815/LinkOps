@@ -1,0 +1,16 @@
+export const colors = {
+  background: 'var(--color-background)',
+  sidebar: 'var(--color-sidebar)',
+  card: 'var(--color-card)',
+  panel: 'var(--color-panel)',
+  border: 'var(--color-border)',
+  textPrimary: 'var(--color-text-primary)',
+  textSecondary: 'var(--color-text-secondary)',
+  brandPrimary: 'var(--color-brand-primary)',
+  brandPrimaryHover: 'var(--color-brand-primary-hover)',
+  success: 'var(--color-status-success)',
+  warning: 'var(--color-status-warning)',
+  danger: 'var(--color-status-danger)',
+  info: 'var(--color-status-info)',
+  neutral: 'var(--color-neutral)',
+} as const;

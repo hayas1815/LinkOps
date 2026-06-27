@@ -1,0 +1,62 @@
+name: linkops
+
+services:
+  frontend:
+    image: linkops-frontend:placeholder
+    profiles:
+      - placeholder
+    networks:
+      - linkops-network
+
+  backend:
+    image: linkops-backend:placeholder
+    profiles:
+      - placeholder
+    networks:
+      - linkops-network
+
+  postgres:
+    image: postgres:placeholder
+    profiles:
+      - placeholder
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - linkops-network
+
+  neo4j:
+    image: neo4j:placeholder
+    profiles:
+      - placeholder
+    volumes:
+      - neo4j-data:/data
+    networks:
+      - linkops-network
+
+  redis:
+    image: redis:placeholder
+    profiles:
+      - placeholder
+    volumes:
+      - redis-data:/data
+    networks:
+      - linkops-network
+
+  pgadmin:
+    image: dpage/pgadmin4:placeholder
+    profiles:
+      - placeholder
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - linkops-network
+
+volumes:
+  postgres-data:
+  neo4j-data:
+  redis-data:
+  pgadmin-data:
+
+networks:
+  linkops-network:
+    driver: bridge

@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-background: #0b1220;
+  --color-sidebar: #111827;
+  --color-card: #111c2e;
+  --color-panel: #162235;
+  --color-border: #24324a;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-brand-primary: #2f6bff;
+  --color-brand-primary-hover: #5b84ff;
+  --color-status-success: #22c55e;
+  --color-status-warning: #f59e0b;
+  --color-status-danger: #ef4444;
+  --color-status-info: #22d3ee;
+  --color-neutral: #64748b;
+  --radius-button: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-dialog: 1rem;
+  --radius-panel: 0.75rem;
+  --radius-input: 0.5rem;
+  --space-4: 0.25rem;
+  --space-8: 0.5rem;
+  --space-12: 0.75rem;
+  --space-16: 1rem;
+  --space-24: 1.5rem;
+  --space-32: 2rem;
+  --space-48: 3rem;
+  --space-64: 4rem;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.24);
+  --shadow-md: 0 10px 24px rgb(0 0 0 / 0.22);
+  --shadow-lg: 0 18px 40px rgb(0 0 0 / 0.28);
+  --shadow-focus: 0 0 0 3px rgb(47 107 255 / 0.28);
+}
+
+[data-theme='light'] {
+  --color-background: #f7f9fc;
+  --color-sidebar: #111827;
+  --color-card: #ffffff;
+  --color-panel: #f3f6fb;
+  --color-border: #d6dee8;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-brand-primary: #1d4ed8;
+  --color-brand-primary-hover: #2563eb;
+  --color-status-success: #15803d;
+  --color-status-warning: #b45309;
+  --color-status-danger: #b91c1c;
+  --color-status-info: #0e7490;
+  --color-neutral: #64748b;
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.08);
+  --shadow-md: 0 10px 24px rgb(15 23 42 / 0.12);
+  --shadow-lg: 0 18px 40px rgb(15 23 42 / 0.16);
+  --shadow-focus: 0 0 0 3px rgb(29 78 216 / 0.24);
+}
+
+html {
+  color-scheme: dark;
+  background: var(--color-background);
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: Inter, system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+::selection {
+  background: rgb(47 107 255 / 0.35);
+  color: var(--color-text-primary);
+}
