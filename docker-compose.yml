@@ -1,6 +1,142 @@
+# =============================================================================
+# LinkOps — Local Development Infrastructure
+# =============================================================================
+# Usage:
+#   docker compose up -d          Start all infrastructure services
+#   docker compose down           Stop all services
+#   docker compose ps             List running services
+#   docker compose logs -f        Follow logs
+#
+# All credentials below are local development defaults.
+# For production, use secrets management and override via .env file.
+# =============================================================================
+
 name: linkops
 
 services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 — Relational database for core platform data
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: linkops-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-linkops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-linkops}
+      POSTGRES_DB: ${POSTGRES_DB:-linkops}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - linkops-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-linkops} -d ${POSTGRES_DB:-linkops}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Redis 7 — Caching, Celery broker, and coordination locks
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: linkops-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - linkops-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Neo4j 5 — Graph database for knowledge graph and asset topology
+  # ---------------------------------------------------------------------------
+  neo4j:
+    image: neo4j:5-community
+    container_name: linkops-neo4j
+    restart: unless-stopped
+    ports:
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-linkops_neo4j}
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+      NEO4J_dbms_security_procedures_allowlist: "apoc.*"
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    networks:
+      - linkops-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ---------------------------------------------------------------------------
+  # MinIO — S3-compatible object storage for documents and media
+  # ---------------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: linkops-minio
+    restart: unless-stopped
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-linkops}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-linkops123}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - linkops-network
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # pgAdmin 4 — PostgreSQL administration console (optional)
+  # ---------------------------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: linkops-pgadmin
+    restart: unless-stopped
+    profiles:
+      - tools
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@linkops.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - linkops-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Frontend — placeholder (built separately)
+  # ---------------------------------------------------------------------------
   frontend:
     image: linkops-frontend:placeholder
     profiles:
@@ -8,55 +144,46 @@ services:
     networks:
       - linkops-network
 
+  # ---------------------------------------------------------------------------
+  # Backend — placeholder (run via uvicorn locally during development)
+  # ---------------------------------------------------------------------------
   backend:
     image: linkops-backend:placeholder
     profiles:
       - placeholder
     networks:
       - linkops-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
 
-  postgres:
-    image: postgres:placeholder
-    profiles:
-      - placeholder
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - linkops-network
-
-  neo4j:
-    image: neo4j:placeholder
-    profiles:
-      - placeholder
-    volumes:
-      - neo4j-data:/data
-    networks:
-      - linkops-network
-
-  redis:
-    image: redis:placeholder
-    profiles:
-      - placeholder
-    volumes:
-      - redis-data:/data
-    networks:
-      - linkops-network
-
-  pgadmin:
-    image: dpage/pgadmin4:placeholder
-    profiles:
-      - placeholder
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-    networks:
-      - linkops-network
-
+# =============================================================================
+# Named volumes — persistent storage across container restarts
+# =============================================================================
 volumes:
   postgres-data:
-  neo4j-data:
+    name: linkops-postgres-data
   redis-data:
+    name: linkops-redis-data
+  neo4j-data:
+    name: linkops-neo4j-data
+  neo4j-logs:
+    name: linkops-neo4j-logs
+  minio-data:
+    name: linkops-minio-data
   pgadmin-data:
+    name: linkops-pgadmin-data
 
+# =============================================================================
+# Networks — shared bridge for inter-service communication
+# =============================================================================
 networks:
   linkops-network:
+    name: linkops-network
     driver: bridge
