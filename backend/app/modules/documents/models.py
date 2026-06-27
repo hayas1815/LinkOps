@@ -5,17 +5,10 @@ Database models for the Document module.
 import uuid
 from datetime import datetime
 from sqlalchemy import BigInteger, DateTime, Enum, String, Uuid, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
+from app.database.base import Base
 from app.modules.documents.enums import DocumentStatus, DocumentType
-
-
-class Base(DeclarativeBase):
-    """
-    Base class for SQLAlchemy declarative models.
-    """
-
-    pass
 
 
 class Document(Base):

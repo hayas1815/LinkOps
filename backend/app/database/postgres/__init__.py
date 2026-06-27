@@ -1,3 +1,5 @@
+"""PostgreSQL async connection sub-package exports."""
+
 from app.database.postgres.manager import PostgresConnectionManager, postgres_manager
 from app.database.postgres.session import get_db_session
 
