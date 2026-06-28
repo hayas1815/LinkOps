@@ -76,6 +76,7 @@ DEFAULT_VECTOR_DISTANCE_METRIC = "cosine"
 
 DEFAULT_FUTURE_AI_PROVIDER = "none"
 DEFAULT_FUTURE_AI_MODEL = "none"
+DEFAULT_COPILOT_MEMORY_WINDOW = 20
 
 LOG_FORMAT = (
     "%(asctime)s | %(levelname)s | request_id=%(request_id)s | "

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Integration tests for the Conversations router using FastAPI TestClient.
 """
 from __future__ import annotations
@@ -158,6 +158,34 @@ class TestConversationRouter:
         assert data["sources"][0]["filename"] == "pump_manual.pdf"
         app.dependency_overrides.clear()
 
+    def test_chat_without_conversation_id(self, client: TestClient, mock_service: MagicMock) -> None:
+        """POST /api/v1/copilot/chat without conversation_id creates new conversation and returns 200."""
+        app.dependency_overrides[get_conversation_service] = lambda: mock_service
+        conv_id = uuid.uuid4()
+        doc_id = uuid.uuid4()
+        chunk_id = uuid.uuid4()
+
+        mock_service.chat = AsyncMock(
+            return_value=ChatResponse(
+                conversation_id=conv_id,
+                assistant_message="Grounded answer.",
+                sources=[],
+                confidence_score=0.90,
+                confidence_level="HIGH",
+            )
+        )
+
+        response = client.post(
+            "/api/v1/copilot/chat",
+            json={"message": "How does the pump start?"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["conversation_id"] == str(conv_id)
+        assert data["assistant_message"] == "Grounded answer."
+        app.dependency_overrides.clear()
+
     def test_chat_validation_error_on_whitespace(self, client: TestClient) -> None:
         """POST /api/v1/copilot/chat returns 422 for whitespace-only message."""
         response = client.post(
@@ -165,3 +193,4 @@ class TestConversationRouter:
             json={"conversation_id": str(uuid.uuid4()), "message": "   "},
         )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+

@@ -32,6 +32,7 @@ from app.core.constants import (
     DEFAULT_VECTOR_DISTANCE_METRIC,
     DEFAULT_FUTURE_AI_PROVIDER,
     DEFAULT_FUTURE_AI_MODEL,
+    DEFAULT_COPILOT_MEMORY_WINDOW,
 )
 
 
@@ -89,6 +90,7 @@ class Settings(BaseModel):
 
     future_ai_provider: str = Field(default=DEFAULT_FUTURE_AI_PROVIDER)
     future_ai_model: str = Field(default=DEFAULT_FUTURE_AI_MODEL)
+    copilot_memory_window: int = Field(default=DEFAULT_COPILOT_MEMORY_WINDOW)
 
     openai_api_key: str | None = Field(default=None)
     supabase_url: str | None = Field(default=None)
@@ -136,6 +138,9 @@ class Settings(BaseModel):
                 "FUTURE_AI_PROVIDER", DEFAULT_FUTURE_AI_PROVIDER
             ),
             future_ai_model=os.getenv("FUTURE_AI_MODEL", DEFAULT_FUTURE_AI_MODEL),
+            copilot_memory_window=int(
+                os.getenv("COPILOT_MEMORY_WINDOW", str(DEFAULT_COPILOT_MEMORY_WINDOW))
+            ),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             supabase_url=os.getenv("SUPABASE_URL"),
             supabase_key=os.getenv("SUPABASE_KEY"),

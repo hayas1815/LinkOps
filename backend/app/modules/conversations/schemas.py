@@ -1,4 +1,4 @@
-﻿"""
+"""
 Pydantic schemas for the Conversations module.
 """
 
@@ -72,8 +72,8 @@ class ChatRequest(BaseModel):
     Schema representing a multi-turn chat request submitted by a user.
     """
 
-    conversation_id: uuid.UUID = Field(
-        ..., description="The ID of the conversation session to continue."
+    conversation_id: uuid.UUID | None = Field(
+        default=None, description="The ID of the conversation session to continue."
     )
     message: str = Field(
         ...,

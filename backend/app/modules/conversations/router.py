@@ -1,4 +1,4 @@
-﻿"""
+"""
 API Router for the Conversations module (S5-M4).
 """
 
@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.modules.search.repository import SearchRepository
 from app.modules.search.service import SearchService
+from app.modules.conversations.exceptions import ConversationNotFoundException
 from app.modules.conversations.repository import ConversationRepository
 from app.modules.conversations.service import ConversationService
 from app.modules.conversations.schemas import (
@@ -63,7 +64,7 @@ async def chat(
             conversation_id=request.conversation_id,
             message_content=request.message,
         )
-    except ValueError as val_err:
+    except (ConversationNotFoundException, ValueError) as val_err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(val_err),
@@ -127,7 +128,7 @@ async def list_messages(
 ) -> list[MessageResponse]:
     try:
         return await service.get_messages(conversation_id)
-    except ValueError as val_err:
+    except (ConversationNotFoundException, ValueError) as val_err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(val_err),

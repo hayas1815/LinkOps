@@ -10,7 +10,7 @@ import logging
 import uuid
 from typing import Sequence
 from datetime import datetime, timezone
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.conversations.models import Conversation, Message

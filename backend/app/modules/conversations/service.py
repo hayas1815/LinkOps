@@ -1,4 +1,4 @@
-﻿"""
+"""
 Service layer for the Conversations module.
 
 Coordinates database persistence for chat history and executing multi-turn context-aware RAG.
@@ -14,6 +14,7 @@ from app.ai.llm.base import BaseLLMProvider
 from app.ai.llm.factory import LLMFactory
 from app.ai.rag import RAGPipeline
 from app.ai.context import build_conversation_context
+from app.modules.conversations.exceptions import ConversationNotFoundException
 from app.modules.conversations.models import Conversation, Message
 from app.modules.conversations.repository import ConversationRepository
 from app.modules.conversations.schemas import (
@@ -85,14 +86,14 @@ class ConversationService:
         """
         conv = await self.repository.get_conversation(conversation_id)
         if not conv:
-            raise ValueError(f"Conversation with ID {conversation_id} not found.")
+            raise ConversationNotFoundException(conversation_id)
 
         messages = await self.repository.get_messages(conversation_id)
         return [MessageResponse.model_validate(m) for m in messages]
 
     async def chat(
         self,
-        conversation_id: uuid.UUID,
+        conversation_id: uuid.UUID | None,
         message_content: str,
         top_k: int = 5,
     ) -> ChatResponse:
@@ -104,10 +105,14 @@ class ConversationService:
           4. Persist assistant response.
           5. Return chat results.
         """
-        # Ensure conversation exists
-        conv = await self.repository.get_conversation(conversation_id)
-        if not conv:
-            raise ValueError(f"Conversation with ID {conversation_id} not found.")
+        # Ensure conversation exists or auto-create one
+        if conversation_id is None:
+            conv = await self.repository.create_conversation()
+            conversation_id = conv.id
+        else:
+            conv = await self.repository.get_conversation(conversation_id)
+            if not conv:
+                raise ConversationNotFoundException(conversation_id)
 
         # 1. Add user message
         await self.repository.add_message(
@@ -119,9 +124,17 @@ class ConversationService:
         # 2. Retrieve history and format
         all_messages = await self.repository.get_messages(conversation_id)
 
-        # Trim conversation history to the last 10 messages (5 turns of user/assistant)
-        # to prevent exceeding context window token limits.
-        trimmed_history = build_conversation_context(all_messages, max_messages=10)
+        # Get settings for memory window configuration
+        from app.core.config import get_settings
+        settings = get_settings()
+
+        # Trim conversation history (prior turns) to the configured memory window size.
+        # We slice all_messages[:-1] to exclude the user message we just appended,
+        # ensuring only prior turns are passed as the history parameter to RAG pipeline.
+        trimmed_history = build_conversation_context(
+            all_messages[:-1],
+            max_messages=settings.copilot_memory_window,
+        )
 
         # 3. Execute context-aware RAG
         pipeline = RAGPipeline(self.search_service, self.llm_provider)
